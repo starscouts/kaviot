@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>About Kaviot</title>
+    <style>
+        * {
+            font-family: -apple-system, system-ui, ".AppleSystemUIFont", sans-serif;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+    <img src="../logo.svg" style="width: 48px; height: 48px;">
+    <span style="color: white; position: fixed; top: 14px; left: 68px;">
+        <div style="font-weight: bold;">Kaviot</div>
+        <div id="version">-</div>
+        <script>
+            (async () => {
+                document.getElementById("version").innerText = (await require('electron').ipcRenderer.invoke('system'))['version'];
+            })();
+        </script>
+    </span>
+
+    <br>
+    <div style="margin-top: 20px; color: white; display: grid; grid-template-columns: 1fr 1fr; grid-column-gap: 5px; width: 100%;">
+        <div style="text-align: right;"><b>Chrome version:</b></div>
+        <div id="chrome">…</div>
+
+        <div style="text-align: right;"><b>Node.js version:</b></div>
+        <div id="node">…</div>
+
+        <div style="text-align: right;"><b>V8 version:</b></div>
+        <div id="v8">…</div>
+
+        <div style="text-align: right;"><b>Python version:</b></div>
+        <div id="python">…</div>
+
+        <div style="text-align: right;"><b>FFmpeg version:</b></div>
+        <div id="ffmpeg">…</div>
+
+        <div style="text-align: right;"><b>SoX version:</b></div>
+        <div id="sox">…</div>
+
+        <div style="text-align: right;"><b>Platform:</b></div>
+        <div id="platform">…</div>
+
+        <div style="text-align: right;"><b>OS kernel:</b></div>
+        <div id="kernel">…</div>
+
+        <div style="text-align: right;"><b>Architecture:</b></div>
+        <div id="arch">…</div>
+    </div>
+
+    <div id="message" style="color: #ffaaaa; height: 128px; margin-top: 30px; display: flex; align-items: center; text-align: center; justify-content: center;">Gathering system information, please wait...</div>
+    <div id="success" style="color: #aaffaa; height: 128px; margin-top: 30px; display: none; align-items: center; text-align: center; justify-content: center;">Gathering system information, please wait...</div>
+
+    <div style="position: fixed; bottom: 10px; color: #555; text-align: center; width: 100%;">© <span id="year"></span> Equestria.dev, Released under MIT.</div>
+    <script>
+        window.exec = require('util').promisify(require('child_process').exec);
+        document.getElementById("year").innerText = new Date().getFullYear() + " ";
+
+        document.getElementById("chrome").innerText = process.versions.chrome;
+        document.getElementById("node").innerText = process.versions.node;
+        document.getElementById("v8").innerText = process.versions.v8;
+        document.getElementById("platform").innerText = require('os').type() + "/" + require('os').platform();
+        document.getElementById("kernel").innerText = require('os').release();
+        document.getElementById("arch").innerText = require('os').arch() + "/" + process.arch;
+
+        let message = "";
+        let pythonExecutable;
+        let pythonVersion;
+
+        async function safeExec(cmd, opt) {
+            try {
+                return await exec(cmd, opt);
+            } catch (e) {
+                console.error(e);
+                return { stdout: '', stderr: '' };
+            }
+        }
+
+        (async () => {
+            if ((await safeExec("py --version"))['stdout'].startsWith("Python 3.11")) {
+                pythonVersion = (await safeExec("py --version"))['stdout'].trim().split(" ")[1];
+                pythonExecutable = "py";
+            } else if ((await safeExec("python3.11 --version"))['stdout'].startsWith("Python 3.11")) {
+                pythonVersion = (await safeExec("python3.11 --version"))['stdout'].trim().split(" ")[1];
+                pythonExecutable = "python3.11";
+            } else if ((await safeExec("python3 --version"))['stdout'].startsWith("Python 3.11")) {
+                pythonVersion = (await safeExec("python3 --version"))['stdout'].trim().split(" ")[1];
+                pythonExecutable = "python3";
+            } else if ((await safeExec("python --version"))['stdout'].startsWith("Python 3.11")) {
+                pythonVersion = (await safeExec("python --version"))['stdout'].trim().split(" ")[1];
+                pythonExecutable = "python";
+            }
+
+            if (pythonVersion && pythonExecutable && pythonVersion.startsWith("3.11")) {
+                document.getElementById("python").innerText = pythonVersion + " (" + pythonExecutable + ")"
+
+                if ((await safeExec("ffmpeg -version"))['stdout'].startsWith("ffmpeg version ") && (await safeExec("ffprobe -version"))['stdout'].startsWith("ffprobe version ")) {
+                    document.getElementById("ffmpeg").innerText = (await safeExec("ffmpeg -version"))['stdout'].split(" ")[2];
+
+                    if (parseInt(document.getElementById("ffmpeg").innerText.split(".")[0]) < 6) {
+                        message = "Your version of FFmpeg is too old to be used with Kaviot. Please install FFmpeg 6.0.0 or later and try again.";
+                    } else if ((await safeExec("sox --version"))['stdout'].trim().includes("SoX v")) {
+                        let version = (await safeExec("sox --version"))['stdout'].trim().split("SoX v")[1];
+
+                        if (version === "") {
+                            message = "The version number reported by SoX is invalid. If you installed SoX with Homebrew, uninstall it and use the official binary instead.";
+                        } else if (parseInt((await safeExec("sox --version"))['stdout'].trim().split("SoX v")[1].split(".")[0]) < 14) {
+                            message = "Your version of Sox is too old to be used with Kaviot. Please install SoX 14.0.0 or later and try again.";
+                        } else {
+                            document.getElementById("sox").innerText = version;
+                            document.getElementById("success").innerText = "All checks have completed successfully, Kaviot can be used on this computer.";
+                            document.getElementById("success").style.display = "flex";
+                            document.getElementById("message").style.display = "none";
+                            require('electron').ipcRenderer.send('show');
+                            return;
+                        }
+                    } else {
+                        message = "No SoX installation was found. Please install SoX using your system's package manager or another method and try again.";
+                    }
+                } else {
+                    message = "No FFmpeg installation was found. Please install FFmpeg using your system's package manager or another method and try again.";
+                }
+            } else {
+                message = "No valid Python 3.11 executable was found. Make sure you have Python 3.11 installed, in your PATH environment variable, and that it can be executed using py, python3.11, python3 or python (in that order).";
+            }
+
+            document.getElementById("message").innerText = message;
+            require('electron').ipcRenderer.send('show');
+        })();
+    </script>
+</body>
+</html>

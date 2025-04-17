@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<!--suppress JSCheckFunctionSignatures -->
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Kaviot Encoder</title>
+    <style>
+        * {
+            font-family: -apple-system, system-ui, ".AppleSystemUIFont", sans-serif;
+            user-select: none;
+        }
+
+        .stella-choice:hover {
+            background-color: #272727 !important;
+        }
+
+        .stella-choice:active {
+            background-color: #333 !important;
+        }
+    </style>
+</head>
+<body style="margin: 0;">
+    <div style="background-color: #151515; height: 8px;">
+        <div id="progress" style="background-color: #8888ff; height: 8px; width: 0;"></div>
+    </div>
+
+    <div>
+        <div style="margin: 8px; color: white; display: none;" id="page-1" class="page">
+            <h2>Select a file to encode</h2>
+            <p>Import a valid audio file (supported by FFmpeg) to start encoding Stella data. A lossless format (WAV, FLAC, ALAC, ...) is recommended but any audio format will work.</p>
+            <button id="file-import" onclick="openFile();">Import</button>
+        </div>
+
+        <div style="margin: 8px; color: white; display: none;" id="page-2" class="page">
+            <h2>Make sure this is the right file</h2>
+            <p id="path">/full/path/to/file</p>
+            <p>
+                <b>Bit depth:</b> <span id="bits">-</span><br>
+                <b>Channels:</b> <span id="channels">-</span><br>
+                <b>Codec:</b> <span id="codec">-</span><br>
+                <b>Length:</b> <span id="length">-</span><br>
+                <b>Sample rate:</b> <span id="sr">-</span>
+            </p>
+            <button onclick="confirmFile();">Confirm</button> <button onclick="location.reload();">Start over</button>
+        </div>
+
+        <div style="margin: 8px; color: white; display: none;" id="page-3" class="page">
+            <h2>Select the version of Stella to use</h2>
+
+            <div onclick="chooseVersion(false);" class="stella-choice" style="margin-top: 20px; margin-bottom: 20px; border: 1px solid #111; background-color: #252525; border-radius: 10px; padding: 10px;">
+                <h3 style="margin: 0;">Stella 2</h3>
+                <i style="display: block; margin-top: 5px; margin-bottom: 15px;">Kaviot Stella 2</i>
+
+                <ul style="margin: 0;">
+                    <li>Using an MP4 file or a folded Stella file</li>
+                    <li>Precise settings and efficient file size</li>
+                    <li>Compatible with third-party audio players</li>
+                    <li>Up to 12x1 channels, high resolution</li>
+                </ul>
+            </div>
+
+            <div onclick="chooseVersion(true);" class="stella-choice" style="margin-top: 20px; margin-bottom: 20px; border: 1px solid #111; background-color: #252525; border-radius: 10px; padding: 10px;">
+                <h3 style="margin: 0;">Stella 1</h3>
+                <i style="display: block; margin-top: 5px; margin-bottom: 15px;">Mist Stella (legacy)</i>
+
+                <ul style="margin: 0;">
+                    <li>Using a Mist Stella file format</li>
+                    <li>Applies effects to the original audio</li>
+                    <li>Compatible with Mist and Kaviot</li>
+                    <li>Up to 6x2 channels, CD quality</li>
+                </ul>
+            </div>
+
+            <button onclick="location.reload();">Start over</button>
+        </div>
+
+        <div style="margin: 8px; color: white; display: none;" id="page-4" class="page">
+            <h2>Tune some settings to your liking</h2>
+
+            <div style="display: grid; grid-template-columns: max-content max-content; width: max-content; grid-column-gap: 5px; margin-bottom: 15px; margin-left: 10px;">
+                <div style="text-align: right;"><b>Bit depth:</b></div>
+                <select id="sel-bit-depth">
+                    <option value="16">Signed 16-bit</option>
+                    <option value="24" selected>Signed 24-bit (recommended)</option>
+                    <option value="32">Signed 32-bit (planar)</option>
+                </select>
+
+                <div style="text-align: right;"><b>Sample rate:</b></div>
+                <select id="sel-sr">
+                    <option value="44100">44.1 kHz</option>
+                    <option value="48000" selected>48.0 kHz (recommended)</option>
+                    <option value="88200">88.2 kHz</option>
+                    <option value="96000">96.0 kHz</option>
+                    <option value="176400">176.4 kHz</option>
+                    <option value="192000">192.0 kHz</option>
+                </select>
+
+                <div style="text-align: right;"><b>Channels:</b></div>
+                <select id="sel-channels">
+                    <option value="2">2 channels</option>
+                    <option value="4">4 channels</option>
+                    <option value="6">6 channels</option>
+                    <option value="8">8 channels</option>
+                    <option value="12" selected>12 channels (recommended)</option>
+                </select>
+
+                <div style="text-align: right;"><b>Compatible codec:</b></div>
+                <select id="sel-codec">
+                    <option value="flac" selected>FLAC (recommended)</option>
+                    <option value="alac">Apple Lossless</option>
+                    <option value="pcm">PCM</option>
+                    <option value="aac">AAC</option>
+                    <option value="libvorbis">Vorbis</option>
+                    <option value="libopus">Opus</option>
+                    <option value="ac3">Dolby Digital</option>
+                    <option value="eac3">Dolby Digital Plus</option>
+                </select>
+
+                <div style="text-align: right;"><b>Folding:</b></div>
+                <select id="sel-folding">
+                    <option value="no">None (recommended)</option>
+                    <option value="yes">Kaviot Stella</option>
+                </select>
+            </div>
+
+            <button onclick="confirmSettings();">Confirm</button> <button onclick="location.reload();">Start over</button>
+        </div>
+
+        <div style="margin: 8px; color: white; display: none;" id="page-5" class="page">
+            <h2>Ready to start!</h2>
+
+            <p>The last step is to select where the resulting Stella file needs to be saved. Make sure you have enough disk space for the final file as well as any intermediary files needed.</p>
+
+            <button onclick="selectOutputAndStart();" id="file-export">Continue</button> <button onclick="location.reload();">Start over</button>
+        </div>
+
+        <div style="margin: 8px; color: white; display: none;" id="page-6" class="page">
+            <h2>Encoding...</h2>
+
+            <p>Your Stella file is now being encoded and will be available soon. This might take a while depending on your settings, so please be patient.</p>
+
+            <p id="encoding-status">Initializing...</p>
+
+            <button onclick="cancelEncoding();" id="reset-1">Cancel and start over</button>
+            <button onclick="location.reload();" id="reset-2" style="display: none;">Start over</button>
+        </div>
+    </div>
+
+    <script>
+        window.exec = require('util').promisify(require('child_process').exec);
+        window.execFile = require('util').promisify(require('child_process').execFile);
+
+        window.betterExecFile = (a, b = null, c = null, f = () => {}) => {
+            return new Promise((res, rej) => {
+                let cp = require('child_process').execFile(a, b ?? null, {
+                    ...c ?? {},
+                    stdio: "pipe"
+                }, (error, stdout, stderr) => {
+                    if (error) rej(error);
+                    res({ stdout, stderr });
+                });
+
+                cp.stdout.on('data', (data) => {
+                    console.log(data.toString());
+                    f(data);
+                });
+
+                cp.stderr.on('data', (data) => {
+                    console.log(data.toString());
+                    f(data);
+                });
+            })
+        }
+
+        let pythonExecutable;
+        let pythonVersion;
+
+        const path = require('path');
+
+        function page(p, b) {
+            Array.from(document.getElementsByClassName("page")).map(i => i.style.display = "none");
+            document.getElementById("page-" + p).style.display = "";
+            document.getElementById("progress").style.width = b + "%";
+        }
+
+        async function selectOutputAndStart() {
+            document.getElementById("file-export").disabled = true;
+
+            let f = await require('@electron/remote').dialog.showSaveDialog({
+                title: "Select a destination for the Stella file",
+                buttonLabel: "Confirm",
+                properties: ["treatPackageAsDirectory", "createDirectory"],
+                message: "Select a destination for the Stella file",
+                defaultPath: path.basename(workingFile, path.extname(workingFile)) + (window.useLegacyStella ? ".stella" : (document.getElementById("sel-folding").value === "yes" ? ".ksz" : ".m4a"))
+            });
+
+            if (f.canceled || !f.filePath || f.filePath.trim() === "") {
+                document.getElementById("file-export").disabled = false;
+            } else {
+                if (f.filePath === workingFile) {
+                    alert("You cannot save to the same file you are encoding from, please select a different name.");
+                    document.getElementById("file-export").disabled = false;
+                    return;
+                } else if (require('fs').existsSync(f.filePath)) {
+                    alert("The file you are trying to save to already exists, please select a different name.");
+                    document.getElementById("file-export").disabled = false;
+                    return;
+                }
+            }
+
+            window.outputFileName = f.filePath;
+            startEncoding();
+        }
+
+        function cancelEncoding() {
+            if (confirm("You are about to cancel the encoding of this file. This will delete any incomplete data.")) {
+                if (require('fs').existsSync(path.dirname(outputFileName) + path.sep + "." + path.basename(outputFileName))) {
+                    require('fs').rmSync(path.dirname(outputFileName) + path.sep + "." + path.basename(outputFileName), { recursive: true });
+                }
+
+                if (require('fs').existsSync(outputFileName)) {
+                    require('fs').rmSync(outputFileName, { recursive: true });
+                }
+
+                location.reload();
+            }
+        }
+
+        async function startEncoding() {
+            page(6, 0);
+            const fs = require('fs');
+            const zlib = require('zlib');
+            const crypto = require('crypto');
+            let workingRoot = path.dirname(outputFileName) + path.sep + "." + path.basename(outputFileName);
+
+            if (require('fs').existsSync(path.dirname(outputFileName) + path.sep + "." + path.basename(outputFileName))) {
+                require('fs').rmSync(path.dirname(outputFileName) + path.sep + "." + path.basename(outputFileName), { recursive: true });
+            }
+
+            if (require('fs').existsSync(outputFileName)) {
+                require('fs').rmSync(outputFileName, { recursive: true });
+            }
+
+            fs.mkdirSync(workingRoot);
+
+            function status(m) {
+                document.getElementById("encoding-status").innerText = m;
+            }
+
+            if (window.useLegacyStella) {
+                status("Downsampling to 16-bit 44.1 kHz...");
+                await betterExecFile("ffmpeg", [ "-i", workingFile, "-ar", "44100", "-c:a", "pcm_s16le", workingRoot + path.sep + "source.wav" ], { stdio: "inherit" });
+
+                status("Splitting into 6 stems... Initializing...");
+                await betterExecFile(pythonExecutable, [ "-m", "demucs.separate", "-o", workingRoot + path.sep + "stems", "-n", "htdemucs_6s", "-d", "cpu", "--flac", workingRoot + path.sep + "source.wav" ], { stdio: "inherit" }, (data) => {
+                    if (!isNaN(parseInt(data.split("%")[0]))) {
+                        if (parseInt(data.split("%")[0]) < 100) {
+                            status("Splitting into 6 stems... " + parseInt(data.split("%")[0]) + "% complete.");
+                        } else {
+                            status("Splitting into 6 stems... Finalizing...");
+                        }
+                    }
+                });
+
+                status("Merging the \"guitar\" and \"other\" stems together...");
+                await betterExecFile("sox", [ "-m", workingRoot + path.sep + "stems/htdemucs_6s/source/guitar.flac", workingRoot + path.sep + "stems/htdemucs_6s/source/other.flac", workingRoot + path.sep + "stems/htdemucs_6s/source/other2.flac" ], { stdio: "inherit" });
+                fs.unlinkSync(workingRoot + path.sep + "stems/htdemucs_6s/source/other.flac");
+                fs.renameSync(workingRoot + path.sep + "stems/htdemucs_6s/source/other2.flac", workingRoot + path.sep + "stems/htdemucs_6s/source/other.flac");
+
+                status("Separating high pass frequencies...");
+                await betterExecFile("sox", [ "-S", workingRoot + path.sep + "source.wav", workingRoot + path.sep + "stems/htdemucs_6s/source/hpf.flac", "sinc", "11k", "-t", "1" ], { stdio: "inherit" });
+
+                status("Applying effects to drums... pass 1/2");
+                await betterExecFile("ffmpeg", [ "-i", workingRoot + path.sep + "stems/htdemucs_6s/source/drums.flac", "-af", "bass=5", workingRoot + path.sep + "stems/htdemucs_6s/source/drums_pre.flac" ], { stdio: "inherit" });
+
+                status("Applying effects to other... pass 1/2");
+                await betterExecFile("ffmpeg", [ "-i", workingRoot + path.sep + "stems/htdemucs_6s/source/other.flac", "-af", "apulsator=hz=0.015", "-af", "aecho=1.0:0.7:20:0.5", workingRoot + path.sep + "stems/htdemucs_6s/source/other_pre.flac" ], { stdio: "inherit" });
+
+                status("Applying effects to hpf... pass 1/1");
+                await betterExecFile("sox", [ workingRoot + path.sep + "stems/htdemucs_6s/source/hpf.flac", workingRoot + path.sep + "stems/htdemucs_6s/source/hpf_out.flac", "reverb", "30", "25", "75" ], { stdio: "inherit" });
+
+                status("Applying effects to bass... pass 1/1");
+                await betterExecFile("sox", [ workingRoot + path.sep + "stems/htdemucs_6s/source/bass.flac", workingRoot + path.sep + "stems/htdemucs_6s/source/bass_out.flac", "reverb", "30", "25", "75" ], { stdio: "inherit" });
+
+                status("Applying effects to drums... pass 2/2");
+                await betterExecFile("sox", [ workingRoot + path.sep + "stems/htdemucs_6s/source/drums_pre.flac", workingRoot + path.sep + "stems/htdemucs_6s/source/drums_out.flac", "reverb", "30", "25", "75" ], { stdio: "inherit" });
+
+                status("Applying effects to other... pass 2/2");
+                await betterExecFile("sox", [ workingRoot + path.sep + "stems/htdemucs_6s/source/other_pre.flac", workingRoot + path.sep + "stems/htdemucs_6s/source/other_out.flac", "reverb", "30", "25", "75" ], { stdio: "inherit" });
+
+                status("Applying effects to piano... pass 1/1");
+                await betterExecFile("sox", [ workingRoot + path.sep + "stems/htdemucs_6s/source/piano.flac", workingRoot + path.sep + "stems/htdemucs_6s/source/piano_out.flac", "reverb", "30", "25", "75" ], { stdio: "inherit" });
+
+                status("Applying effects to vocals... pass 1/1");
+                await betterExecFile("sox", [ workingRoot + path.sep + "stems/htdemucs_6s/source/vocals.flac", workingRoot + path.sep + "stems/htdemucs_6s/source/vocals_out.flac", "reverb", "30", "25", "75" ], { stdio: "inherit" });
+
+                status("Saving debugging data...");
+                await betterExecFile("sox", [ "-m", workingRoot + path.sep + "stems/htdemucs_6s/source/vocals_out.flac", workingRoot + path.sep + "stems/htdemucs_6s/source/piano_out.flac", workingRoot + path.sep + "stems/htdemucs_6s/source/other_out.flac", workingRoot + path.sep + "stems/htdemucs_6s/source/drums_out.flac", workingRoot + path.sep + "stems/htdemucs_6s/source/bass_out.flac", workingRoot + path.sep + "stems/htdemucs_6s/source/hpf_out.flac", workingRoot + path.sep + "debug.flac" ], { stdio: "inherit" });
+
+                status("Preparing Mist Stella file...");
+
+                let files = {
+                    bass: zlib.deflateRawSync(fs.readFileSync(workingRoot + path.sep + "stems/htdemucs_6s/source/bass_out.flac")),
+                    drums: zlib.deflateRawSync(fs.readFileSync(workingRoot + path.sep + "stems/htdemucs_6s/source/drums_out.flac")),
+                    hpf: zlib.deflateRawSync(fs.readFileSync(workingRoot + path.sep + "stems/htdemucs_6s/source/hpf_out.flac")),
+                    other: zlib.deflateRawSync(fs.readFileSync(workingRoot + path.sep + "stems/htdemucs_6s/source/other_out.flac")),
+                    piano: zlib.deflateRawSync(fs.readFileSync(workingRoot + path.sep + "stems/htdemucs_6s/source/piano_out.flac")),
+                    vocals: zlib.deflateRawSync(fs.readFileSync(workingRoot + path.sep + "stems/htdemucs_6s/source/vocals_out.flac")),
+                }
+
+                let magic = Buffer.from("00ffff4f00000100", "hex");
+                let metadata = Buffer.from(zlib.deflateRawSync(JSON.stringify({
+                    version: "2." + (await require('electron').ipcRenderer.invoke("system")).version,
+                    id: crypto.randomBytes(16).toString("base64").replace(/[^a-zA-Z\d]/g, "").toUpperCase().substring(0, 10),
+                    stems: {
+                        bass: [512, files.bass.length],
+                        drums: [512 + files.bass.length, files.drums.length],
+                        hpf: [512 + files.bass.length + files.drums.length, files.hpf.length],
+                        other: [512 + files.bass.length + files.drums.length + files.hpf.length, files.other.length],
+                        piano: [512 + files.bass.length + files.drums.length + files.hpf.length + files.other.length, files.piano.length],
+                        vocals: [512 + files.bass.length + files.drums.length + files.hpf.length + files.other.length + files.piano.length, files.vocals.length],
+                    }
+                })));
+                let padding = Buffer.from("00".repeat(504 - metadata.length), "hex");
+
+                let header = Buffer.concat([magic, metadata, padding]);
+                if (header.length !== 512) {
+                    throw new Error("Invalid header length.");
+                }
+
+                let file = Buffer.concat([header, files.bass, files.drums, files.hpf, files.other, files.piano, files.vocals]);
+
+                status("Writing to disk...");
+                fs.writeFileSync(outputFileName, file);
+
+                status("Hold Shift to preserve temporary files.");
+                let shift = false;
+
+                let keyDownListener = (e) => {
+                    if (e.key === "Shift") {
+                        shift = true;
+                    }
+                }
+
+                let keyUpListener = (e) => {
+                    if (e.key === "Shift") {
+                        shift = false;
+                    }
+                }
+
+                document.addEventListener("keydown", keyDownListener);
+                document.addEventListener("keyup", keyUpListener);
+
+                setTimeout(() => {
+                    document.removeEventListener("keydown", keyDownListener);
+                    document.removeEventListener("keyup", keyUpListener);
+
+                    if (!shift) {
+                        status("Deleting temporary files...");
+
+                        if (require('fs').existsSync(path.dirname(outputFileName) + path.sep + "." + path.basename(outputFileName))) {
+                            require('fs').rmSync(path.dirname(outputFileName) + path.sep + "." + path.basename(outputFileName), { recursive: true });
+                        }
+                    }
+
+                    status("Encoding complete.");
+                    document.getElementById("reset-1").style.display = "none";
+                    document.getElementById("reset-2").style.display = "";
+                }, 3000);
+            } else {
+                let depth = parseInt(document.getElementById("sel-bit-depth").value);
+                let sr = parseInt(document.getElementById("sel-sr").value);
+                let channels = parseInt(document.getElementById("sel-channels").value);
+
+                status("Resampling to " + depth + "-bit " + (sr / 1000).toFixed(1) + " kHz...");
+                await betterExecFile("ffmpeg", [ "-i", workingFile, "-ar", sr, "-c:a", "pcm_s" + depth + "le", workingRoot + path.sep + "source.wav" ]);
+
+                status("Encoding compatibility stream...");
+                await betterExecFile("ffmpeg", [ "-i", workingFile, "-ar", "44100", "-map", "0:a", "-f", "mp4", "-c:a", document.getElementById("sel-codec").value, workingRoot + path.sep + "compatibility.m4a" ]);
+
+                let stems = 0;
+
+                if (channels === 2) {
+                    stems = 2;
+                } else if (channels === 4 || channels === 8) {
+                    stems = 4;
+                } else if (channels === 6 || channels === 12) {
+                    stems = 6;
+                }
+
+                status("Splitting into " + stems + " stems... Initializing...");
+                await betterExecFile(pythonExecutable, [ "-m", "demucs.separate", "-o", workingRoot + path.sep + "stems", "-n", ((stems === 2 || stems === 4) ? "htdemucs" : "htdemucs_6s"), "-d", "cpu", "--float32", ...(stems === 2 ? ["--two-stems", "vocals"] : []), workingRoot + path.sep + "source.wav" ], { stdio: "inherit" }, (data) => {
+                    if (!isNaN(parseInt(data.split("%")[0]))) {
+                        if (parseInt(data.split("%")[0]) < 100) {
+                            status("Splitting into " + stems + " stems... " + parseInt(data.split("%")[0]) + "% complete.");
+                        } else {
+                            status("Splitting into " + stems + " stems... Finalizing...");
+                        }
+                    }
+                });
+
+                fs.unlinkSync(workingRoot + path.sep + "source.wav");
+
+                if (channels === 8 || channels === 12) {
+                    status("Separating audio channels...");
+                    let stems = workingRoot + path.sep + "stems/" + (channels === 8 ? "htdemucs" : "htdemucs_6s");
+
+                    status("Separating audio channels... bass");
+                    await betterExecFile("ffmpeg", [ "-i", stems + "/source/bass.wav", "-map_channel", "0.0.0", stems + "/source/bass_l.wav", "-map_channel", "0.0.1", stems + "/source/bass_r.wav" ]);
+
+                    status("Separating audio channels... drums");
+                    await betterExecFile("ffmpeg", [ "-i", stems + "/source/drums.wav", "-map_channel", "0.0.0", stems + "/source/drums_l.wav", "-map_channel", "0.0.1", stems + "/source/drums_r.wav" ]);
+
+                    status("Separating audio channels... other");
+                    await betterExecFile("ffmpeg", [ "-i", stems + "/source/other.wav", "-map_channel", "0.0.0", stems + "/source/other_l.wav", "-map_channel", "0.0.1", stems + "/source/other_r.wav" ]);
+
+                    status("Separating audio channels... vocals");
+                    await betterExecFile("ffmpeg", [ "-i", stems + "/source/vocals.wav", "-map_channel", "0.0.0", stems + "/source/vocals_l.wav", "-map_channel", "0.0.1", stems + "/source/vocals_r.wav" ]);
+
+                    fs.unlinkSync(stems + "/source/vocals.wav");
+                    fs.unlinkSync(stems + "/source/other.wav");
+                    fs.unlinkSync(stems + "/source/drums.wav");
+                    fs.unlinkSync(stems + "/source/bass.wav");
+
+                    if (channels === 12) {
+                        status("Separating audio channels... guitar");
+                        await betterExecFile("ffmpeg", [ "-i", stems + "/source/guitar.wav", "-map_channel", "0.0.0", stems + "/source/guitar_l.wav", "-map_channel", "0.0.1", stems + "/source/guitar_r.wav" ]);
+
+                        status("Separating audio channels... piano");
+                        await betterExecFile("ffmpeg", [ "-i", stems + "/source/piano.wav", "-map_channel", "0.0.0", stems + "/source/piano_l.wav", "-map_channel", "0.0.1", stems + "/source/piano_r.wav" ]);
+
+                        fs.unlinkSync(stems + "/source/piano.wav");
+                        fs.unlinkSync(stems + "/source/guitar.wav");
+                    }
+                }
+
+                status("Encoding individual channels...");
+                let streams = [
+                    {
+                        name: "Stella_Compat",
+                        file: workingRoot + path.sep + "compatibility.m4a"
+                    }
+                ];
+
+                if (channels === 2) {
+                    streams.push(...[
+                        {
+                            name: "Stella_02C_Instr_D",
+                            file: workingRoot + path.sep + "stems/htdemucs/source/no_vocals.wav"
+                        },
+                        {
+                            name: "Stella_02C_Vocal_D",
+                            file: workingRoot + path.sep + "stems/htdemucs/source/vocals.wav"
+                        }
+                    ]);
+                } else if (channels === 4) {
+                    streams.push(...[
+                        {
+                            name: "Stella_04C_IBass_D",
+                            file: workingRoot + path.sep + "stems/htdemucs/source/bass.wav"
+                        },
+                        {
+                            name: "Stella_04C_Drums_D",
+                            file: workingRoot + path.sep + "stems/htdemucs/source/drums.wav"
+                        },
+                        {
+                            name: "Stella_04C_Other_D",
+                            file: workingRoot + path.sep + "stems/htdemucs/source/other.wav"
+                        },
+                        {
+                            name: "Stella_04C_Vocal_D",
+                            file: workingRoot + path.sep + "stems/htdemucs/source/vocals.wav"
+                        }
+                    ]);
+                } else if (channels === 6) {
+                    streams.push(...[
+                        {
+                            name: "Stella_06C_IBass_D",
+                            file: workingRoot + path.sep + "stems/htdemucs_6s/source/bass.wav"
+                        },
+                        {
+                            name: "Stella_06C_Drums_D",
+                            file: workingRoot + path.sep + "stems/htdemucs_6s/source/drums.wav"
+                        },
+                        {
+                            name: "Stella_06C_Other_D",
+                            file: workingRoot + path.sep + "stems/htdemucs_6s/source/other.wav"
+                        },
+                        {
+                            name: "Stella_06C_Vocal_D",
+                            file: workingRoot + path.sep + "stems/htdemucs_6s/source/vocals.wav"
+                        },
+                        {
+                            name: "Stella_06C_Guitr_D",
+                            file: workingRoot + path.sep + "stems/htdemucs_6s/source/guitar.wav"
+                        },
+                        {
+                            name: "Stella_06C_Piano_D",
+                            file: workingRoot + path.sep + "stems/htdemucs_6s/source/piano.wav"
+                        }
+                    ]);
+                } else if (channels === 8) {
+                    streams.push(...[
+                        {
+                            name: "Stella_08C_IBass_L",
+                            file: workingRoot + path.sep + "stems/htdemucs/source/bass_l.wav"
+                        },
+                        {
+                            name: "Stella_08C_Drums_L",
+                            file: workingRoot + path.sep + "stems/htdemucs/source/drums_l.wav"
+                        },
+                        {
+                            name: "Stella_08C_Other_L",
+                            file: workingRoot + path.sep + "stems/htdemucs/source/other_l.wav"
+                        },
+                        {
+                            name: "Stella_08C_Vocal_L",
+                            file: workingRoot + path.sep + "stems/htdemucs/source/vocals_l.wav"
+                        },
+                        {
+                            name: "Stella_08C_IBass_R",
+                            file: workingRoot + path.sep + "stems/htdemucs/source/bass_r.wav"
+                        },
+                        {
+                            name: "Stella_08C_Drums_R",
+                            file: workingRoot + path.sep + "stems/htdemucs/source/drums_r.wav"
+                        },
+                        {
+                            name: "Stella_08C_Other_R",
+                            file: workingRoot + path.sep + "stems/htdemucs/source/other_r.wav"
+                        },
+                        {
+                            name: "Stella_08C_Vocal_R",
+                            file: workingRoot + path.sep + "stems/htdemucs/source/vocals_r.wav"
+                        }
+                    ]);
+                } else if (channels === 12) {
+                    streams.push(...[
+                        {
+                            name: "Stella_12C_IBass_L",
+                            file: workingRoot + path.sep + "stems/htdemucs_6s/source/bass_l.wav"
+                        },
+                        {
+                            name: "Stella_12C_Drums_L",
+                            file: workingRoot + path.sep + "stems/htdemucs_6s/source/drums_l.wav"
+                        },
+                        {
+                            name: "Stella_12C_Other_L",
+                            file: workingRoot + path.sep + "stems/htdemucs_6s/source/other_l.wav"
+                        },
+                        {
+                            name: "Stella_12C_Vocal_L",
+                            file: workingRoot + path.sep + "stems/htdemucs_6s/source/vocals_l.wav"
+                        },
+                        {
+                            name: "Stella_12C_Guitr_L",
+                            file: workingRoot + path.sep + "stems/htdemucs_6s/source/guitar_l.wav"
+                        },
+                        {
+                            name: "Stella_12C_Piano_L",
+                            file: workingRoot + path.sep + "stems/htdemucs_6s/source/piano_l.wav"
+                        },
+                        {
+                            name: "Stella_12C_IBass_R",
+                            file: workingRoot + path.sep + "stems/htdemucs_6s/source/bass_r.wav"
+                        },
+                        {
+                            name: "Stella_12C_Drums_R",
+                            file: workingRoot + path.sep + "stems/htdemucs_6s/source/drums_r.wav"
+                        },
+                        {
+                            name: "Stella_12C_Other_R",
+                            file: workingRoot + path.sep + "stems/htdemucs_6s/source/other_r.wav"
+                        },
+                        {
+                            name: "Stella_12C_Vocal_R",
+                            file: workingRoot + path.sep + "stems/htdemucs_6s/source/vocals_r.wav"
+                        },
+                        {
+                            name: "Stella_12C_Guitr_R",
+                            file: workingRoot + path.sep + "stems/htdemucs_6s/source/guitar_r.wav"
+                        },
+                        {
+                            name: "Stella_12C_Piano_R",
+                            file: workingRoot + path.sep + "stems/htdemucs_6s/source/piano_r.wav"
+                        }
+                    ]);
+                }
+
+                console.log(streams);
+
+                for (let stream of streams) {
+                    if (stream.file.endsWith("compatibility.m4a")) continue;
+                    status("Encoding individual channels... " + stream.name);
+                    await betterExecFile("ffmpeg", [ "-i", stream.file, "-ar", sr, "-c:a", (depth === 32 ? "alac" : "flac"), "-sample_fmt", (depth === 32 ? "s32p" : "s" + (depth === 24 ? "32" : "16")), "-f", "mp4", path.dirname(stream.file) + "/" + path.basename(stream.file, path.extname(stream.file)) + ".m4a" ]);
+                    fs.unlinkSync(stream.file);
+                }
+
+                status("Building final MPEG-4 file...");
+                await betterExecFile("ffmpeg", [ ...(streams.map(i => [ "-i", path.dirname(i.file) + "/" + path.basename(i.file, path.extname(i.file)) + ".m4a" ]).reduce((a, b) => [...a, ...b])), ...(streams.map((i, j) => [ "-map", j ]).reduce((a, b) => [...a, ...b])), ...(streams.map((i, j) => [ "-metadata:s:a:" + j, "title=" + i.name ]).reduce((a, b) => [...a, ...b])), "-f", "mp4", "-c:a", "copy", ...(streams.map((i, j) => {
+                    return [
+                        "-metadata",
+                        "Stella_CM_" + j + "=" + JSON.stringify({
+                            stream: j,
+                            name: i.name
+                        })
+                    ]
+                }).reduce((a, b) => [...a, ...b])), "-movflags", "use_metadata_tags", workingRoot + path.sep + "final.m4a" ]);
+
+                if (document.getElementById("sel-folding").value === "yes") {
+                    status("Folding audio file...");
+                    fs.writeFileSync(outputFileName, await require('util').promisify(zlib.brotliCompress)(fs.readFileSync(workingRoot + path.sep + "final.m4a")));
+                } else {
+                    status("Exporting audio file...");
+                    fs.writeFileSync(outputFileName, fs.readFileSync(workingRoot + path.sep + "final.m4a"));
+                }
+
+                status("Hold Shift to preserve temporary files.");
+                let shift = false;
+
+                let keyDownListener = (e) => {
+                    if (e.key === "Shift") {
+                        shift = true;
+                    }
+                }
+
+                let keyUpListener = (e) => {
+                    if (e.key === "Shift") {
+                        shift = false;
+                    }
+                }
+
+                document.addEventListener("keydown", keyDownListener);
+                document.addEventListener("keyup", keyUpListener);
+
+                setTimeout(() => {
+                    document.removeEventListener("keydown", keyDownListener);
+                    document.removeEventListener("keyup", keyUpListener);
+
+                    if (!shift) {
+                        status("Deleting temporary files...");
+
+                        if (require('fs').existsSync(path.dirname(outputFileName) + path.sep + "." + path.basename(outputFileName))) {
+                            require('fs').rmSync(path.dirname(outputFileName) + path.sep + "." + path.basename(outputFileName), { recursive: true });
+                        }
+                    }
+
+                    status("Encoding complete.");
+                    document.getElementById("reset-1").style.display = "none";
+                    document.getElementById("reset-2").style.display = "";
+                }, 3000);
+            }
+        }
+
+        function chooseVersion(legacy) {
+            window.useLegacyStella = legacy;
+
+            if (window.useLegacyStella) {
+                page(5, 0);
+            } else {
+                page(4, 0);
+            }
+        }
+
+        function confirmFile() {
+            page(3, 0);
+        }
+
+        function confirmSettings() {
+            page(5, 0);
+        }
+
+        async function openFile() {
+            document.getElementById("file-import").disabled = true;
+
+            let f = await require('@electron/remote').dialog.showOpenDialog({
+                title: "Select a valid audio file",
+                buttonLabel: "Import",
+                properties: ["openFile", "treatPackageAsDirectory"],
+                message: "Select a valid audio file"
+            });
+
+            if (f.canceled || f.filePaths.length === 0) {
+                document.getElementById("file-import").disabled = false;
+            } else {
+                let file = f.filePaths[0];
+                window.workingFile = file;
+                let data;
+
+                try {
+                    data = JSON.parse((await execFile("ffprobe", ["-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", file]))['stdout']);
+
+                    if (data.streams.filter(i => i.sample_rate && i.codec_type === "audio").length < 1) {
+                        alert("This file is not a valid audio file, please import an audio file supported by FFmpeg.");
+                        document.getElementById("file-import").disabled = false;
+                    } else {
+                        let stream = data.streams.filter(i => i.sample_rate && i.codec_type === "audio")[0];
+
+                        document.getElementById("path").innerText = file;
+                        document.getElementById("bits").innerText = stream['bits_per_raw_sample'] + "-bit";
+                        document.getElementById("channels").innerText = stream['channels'] + " channel" + (stream['channels'] !== 1 ? "s" : "");
+                        document.getElementById("codec").innerText = stream['codec_long_name'];
+                        document.getElementById("length").innerText = Math.round(stream['duration']) + " secs/" + stream['duration_ts'] + " samples";
+                        document.getElementById("sr").innerText = stream['sample_rate'] + " Hz";
+
+                        page(2, 0);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert("This file is not a valid audio file, please import an audio file supported by FFmpeg.");
+                    document.getElementById("file-import").disabled = false;
+                }
+
+                console.log(data);
+            }
+        }
+
+        async function safeExec(cmd, opt) {
+            try {
+                return await exec(cmd, opt);
+            } catch (e) {
+                console.error(e);
+                return { stdout: '', stderr: '' };
+            }
+        }
+
+        (async () => {
+            if ((await safeExec("py --version"))['stdout'].startsWith("Python 3.11")) {
+                pythonVersion = (await safeExec("py --version"))['stdout'].trim().split(" ")[1];
+                pythonExecutable = "py";
+            } else if ((await safeExec("python3.11 --version"))['stdout'].startsWith("Python 3.11")) {
+                pythonVersion = (await safeExec("python3.11 --version"))['stdout'].trim().split(" ")[1];
+                pythonExecutable = "python3.11";
+            } else if ((await safeExec("python3 --version"))['stdout'].startsWith("Python 3.11")) {
+                pythonVersion = (await safeExec("python3 --version"))['stdout'].trim().split(" ")[1];
+                pythonExecutable = "python3";
+            } else if ((await safeExec("python --version"))['stdout'].startsWith("Python 3.11")) {
+                pythonVersion = (await safeExec("python --version"))['stdout'].trim().split(" ")[1];
+                pythonExecutable = "python";
+            }
+
+            if (pythonVersion && pythonExecutable && pythonVersion.startsWith("3.11")) {
+                if ((await safeExec("ffmpeg -version"))['stdout'].startsWith("ffmpeg version ") && (await safeExec("ffprobe -version"))['stdout'].startsWith("ffprobe version ")) {
+                    if (parseInt((await safeExec("ffmpeg -version"))['stdout'].split(" ")[2].split(".")[0]) < 6) {
+                        alert("Your version of FFmpeg is too old to be used with Kaviot. Please install FFmpeg 6.0.0 or later and try again.");
+                        window.close();
+                    } else if ((await safeExec("sox --version"))['stdout'].trim().includes("SoX v")) {
+                        let version = (await safeExec("sox --version"))['stdout'].trim().split("SoX v")[1];
+
+                        if (version === "") {
+                            alert("The version number reported by SoX is invalid. If you installed SoX with Homebrew, uninstall it and use the official binary instead.");
+                            window.close();
+                        } else if (parseInt((await safeExec("sox --version"))['stdout'].trim().split("SoX v")[1].split(".")[0]) < 14) {
+                            alert("Your version of Sox is too old to be used with Kaviot. Please install SoX 14.0.0 or later and try again.");
+                            window.close();
+                        } else {
+                            page(1, 0);
+                            require('electron').ipcRenderer.send('show');
+                        }
+                    } else {
+                        alert("No SoX installation was found. Please install SoX using your system's package manager or another method and try again.");
+                        window.close();
+                    }
+                } else {
+                    alert("No FFmpeg installation was found. Please install FFmpeg using your system's package manager or another method and try again.");
+                    window.close();
+                }
+            } else {
+                alert("No valid Python 3.11 executable was found. Make sure you have Python 3.11 installed, in your PATH environment variable, and that it can be executed using py, python3.11, python3 or python (in that order).");
+                window.close();
+            }
+        })();
+    </script>
+</body>
+</html>

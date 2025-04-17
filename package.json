@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "run": "electron main.js"
+  },
+  "dependencies": {
+    "@electron/remote": "^2.1.2",
+    "electron": "^28.2.1",
+    "electron-packager": "^17.1.2"
+  }
+}

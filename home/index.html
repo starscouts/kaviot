@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Kaviot</title>
+    <style>
+        * {
+            font-family: -apple-system, system-ui, ".AppleSystemUIFont", sans-serif;
+            user-select: none;
+        }
+
+        .menu-item:hover {
+            background-color: #272727 !important;
+        }
+
+        .menu-item:active {
+            background-color: #333 !important;
+        }
+    </style>
+</head>
+<body>
+<img src="../logo.svg" style="
+    position: fixed;
+    width: 96px;
+    height: 96px;
+    top: 50px;
+    left: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
+">
+<div style="
+    color: white;
+    position: fixed;
+    top: 170px;
+    left: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    width: max-content;
+    font-size: 24px;
+">Kaviot
+</div>
+<div style="
+    position: fixed;
+    bottom: 152px;
+    left: 20px;
+    width: calc(100% - 40px);
+    border: 1px solid #333;
+    border-radius: 10px;
+">
+    <div onclick="require('electron').ipcRenderer.send('encoder');" class="menu-item" style="
+    height: 32px;
+    background-color: #252525;
+    border-bottom: 1px solid #333;
+    padding: 4px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+"><img src="encoder.svg" style="
+    width: 24px;
+    height: 24px;
+    margin-top: 4px;
+    margin-left: 16px;
+    filter: invert(1);
+"><span style="position: relative;display: inline-block;top: -6px;margin-left: 10px;color: white;">Encode Mist Stella or Kaviot Stella 2</span>
+    </div>
+    <div class="menu-item" style="
+    height: 32px;
+    background-color: #252525;
+    border-bottom: 1px solid #333;
+    padding: 4px;
+"><img src="inspector.svg" style="
+    width: 24px;
+    height: 24px;
+    margin-top: 4px;
+    margin-left: 16px;
+    filter: invert(1);
+"><span style="position: relative;display: inline-block;top: -6px;margin-left: 10px;color: white;">Inspect spatial audio data</span>
+    </div>
+    <div class="menu-item" style="
+    height: 32px;
+    background-color: #252525;
+    padding: 4px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+"><img src="player.svg" style="
+    width: 24px;
+    height: 24px;
+    margin-top: 4px;
+    margin-left: 16px;
+    filter: invert(1);
+"><span style="position: relative;display: inline-block;top: -6px;margin-left: 10px;color: white;">Play spatial audio files</span>
+    </div>
+</div>
+
+<div style="
+    position: fixed;
+    bottom: 50px;
+    left: 20px;
+    width: calc(100% - 40px);
+    border: 1px solid #333;
+    border-radius: 10px;
+">
+    <div onclick="require('electron').ipcRenderer.send('about');" class="menu-item" style="
+    height: 32px;
+    background-color: #252525;
+    border-bottom: 1px solid #333;
+    padding: 4px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+"><img src="about.svg" style="
+    width: 24px;
+    height: 24px;
+    margin-top: 4px;
+    margin-left: 16px;
+    filter: invert(1);
+"><span style="position: relative;display: inline-block;top: -6px;margin-left: 10px;color: white;">About and system information</span>
+    </div>
+    <div onclick="window.close();" class="menu-item" style="
+    height: 32px;
+    background-color: #252525;
+    padding: 4px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+"><img src="quit.svg" style="
+    width: 24px;
+    height: 24px;
+    margin-top: 4px;
+    margin-left: 16px;
+    filter: invert(1);
+"><span style="position: relative;display: inline-block;top: -6px;margin-left: 10px;color: white;">Quit</span></div>
+</div>
+</body>
+</html>
